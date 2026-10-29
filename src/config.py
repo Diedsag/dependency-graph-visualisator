@@ -2,10 +2,14 @@
 Модуль для парсинга аргументов командной строки и валидации конфигурации.
 """
 import argparse
+import re
 from dataclasses import dataclass
 
 INFINITE_DEPTH = -1
 MIN_VALID_DEPTH = -1
+PACKAGE_NAME_PATTERN = re.compile(r"^[a-z0-9@\/._-]+$", re.IGNORECASE)
+URL_PATTERN = re.compile(r"^https?:\/\/.*")
+FILE_PATH_PATTERN = re.compile(r"^.+\..+$")
 
 
 @dataclass(frozen=True)
@@ -57,18 +61,51 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _validate_package_name(name: str) -> None:
+    """Проверяет имя пакета на соответствие формату через Regex."""
+    if not name:
+        raise ValueError("Имя пакета не может быть пустым.")
+    if not PACKAGE_NAME_PATTERN.match(name):
+        raise ValueError(
+            f"Некорректное имя пакета: '{name}'."
+        )
+
+
+def _validate_source(source: str, is_test_mode: bool) -> None:
+    """Проверяет источник (URL репозитория или путь к файлу)."""
+    if not source:
+        raise ValueError("Источник не может быть пустым.")
+    if is_test_mode:
+        if not FILE_PATH_PATTERN.match(source):
+            raise ValueError(
+                f"Некорректный путь к файлу: '{source}'."
+            )
+    else:
+        if not URL_PATTERN.match(source):
+            raise ValueError(
+                f"Некорректный URL репозитория: '{source}'."
+            )
+
+
+def _validate_depth(depth: int) -> None:
+    """Проверяет значение глубины анализа."""
+    if depth < MIN_VALID_DEPTH:
+        raise ValueError(
+            f"Глубина должна быть >= {MIN_VALID_DEPTH}."
+        )
+
+
 def parse_args(args: list[str]) -> Config:
     """
     Парсит аргументы и возвращает объект Config.
-    Выбрасывает ValueError при некорректной глубине.
+    Выбрасывает ValueError при некорректных параметрах.
     """
     parser = _build_parser()
     parsed = parser.parse_args(args)
 
-    if parsed.max_depth < MIN_VALID_DEPTH:
-        raise ValueError(
-            f"Глубина должна быть >= {MIN_VALID_DEPTH}."
-        )
+    _validate_package_name(parsed.package)
+    _validate_source(parsed.source, parsed.test_mode)
+    _validate_depth(parsed.max_depth)
 
     return Config(
         package_name=parsed.package,
