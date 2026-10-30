@@ -7,6 +7,7 @@ import sys
 
 from src.config import Config, parse_args
 from src.fetcher import BaseFetcher, NpmFetcher, TestFetcher
+from src.graph import Graph, GraphBuilder
 
 logging.basicConfig(
     level=logging.INFO,
@@ -33,14 +34,18 @@ def create_fetcher(config: Config) -> BaseFetcher:
     return NpmFetcher(config.source)
 
 
-def print_dependencies(package_name: str, deps: dict[str, str]) -> None:
-    """Выводит список прямых зависимостей пакета."""
-    logger.info("--- Прямые зависимости %s ---", package_name)
-    if not deps:
-        logger.info("Зависимости не найдены.")
-    for name, version in deps.items():
-        logger.info("%s: %s", name, version)
-    logger.info("------------------------------")
+def print_graph_summary(graph: Graph) -> None:
+    """Выводит краткую сводку о построенном графе."""
+    logger.info("--- Сводка по графу ---")
+    logger.info("Всего уникальных пакетов: %d", len(graph.adjacency))
+    for node, deps in sorted(graph.adjacency.items()):
+        if deps:
+            logger.info(
+                "%s -> %s", node, ", ".join(sorted(deps))
+            )
+        else:
+            logger.info("%s -> (нет зависимостей)", node)
+    logger.info("-----------------------")
 
 
 def main() -> int:
@@ -50,8 +55,11 @@ def main() -> int:
         print_config(config)
 
         fetcher = create_fetcher(config)
-        deps = fetcher.fetch(config.package_name)
-        print_dependencies(config.package_name, deps)
+        builder = GraphBuilder(fetcher)
+        graph = builder.build(
+            config.package_name, config.max_depth
+        )
+        print_graph_summary(graph)
 
         return 0
     except ValueError as error:
