@@ -23,6 +23,7 @@ class Config:
     is_test_mode: bool
     use_ascii_tree: bool
     max_depth: int
+    reverse_for: str | None
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -57,6 +58,12 @@ def _build_parser() -> argparse.ArgumentParser:
         type=int,
         default=INFINITE_DEPTH,
         help="Максимальная глубина анализа."
+    )
+    parser.add_argument(
+        "--reverse-for",
+        type=str,
+        default=None,
+        help="Пакет для поиска обратных зависимостей."
     )
     return parser
 
@@ -107,10 +114,14 @@ def parse_args(args: list[str]) -> Config:
     _validate_source(parsed.source, parsed.test_mode)
     _validate_depth(parsed.max_depth)
 
+    if parsed.reverse_for:
+        _validate_package_name(parsed.reverse_for)
+
     return Config(
         package_name=parsed.package,
         source=parsed.source,
         is_test_mode=parsed.test_mode,
         use_ascii_tree=parsed.ascii_tree,
-        max_depth=parsed.max_depth
+        max_depth=parsed.max_depth,
+        reverse_for=parsed.reverse_for
     )

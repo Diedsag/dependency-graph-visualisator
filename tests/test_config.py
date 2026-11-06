@@ -88,3 +88,27 @@ def test_parse_args_test_mode_rejects_bad_path() -> None:
     ]
     with pytest.raises(ValueError):
         parse_args(args)
+
+
+def test_parse_args_reverse_for() -> None:
+    """Проверяет парсинг обратных зависимостей."""
+    args = [
+        "--package", "A",
+        "--source", "test.json",
+        "--test-mode",
+        "--reverse-for", "D"
+    ]
+    config = parse_args(args)
+    assert config.reverse_for == "D"
+
+
+def test_parse_args_reverse_for_invalid() -> None:
+    """Проверяет валидацию обратного параметра."""
+    args = [
+        "--package", "A",
+        "--source", "test.json",
+        "--test-mode",
+        "--reverse-for", "BAD NAME!"
+    ]
+    with pytest.raises(ValueError):
+        parse_args(args)

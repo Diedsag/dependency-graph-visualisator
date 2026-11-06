@@ -45,6 +45,19 @@ def print_graph_summary(graph: Graph) -> None:
     logger.info("-----------------------")
 
 
+def print_reverse_deps(
+    graph: Graph, target: str
+) -> None:
+    """Выводит обратные зависимости для заданного пакета."""
+    logger.info("--- Обратные зависимости для %s ---", target)
+    reverse_deps = graph.get_reverse_dependencies(target)
+    if not reverse_deps:
+        logger.info("Обратные зависимости не найдены.")
+    for dep in sorted(reverse_deps):
+        logger.info(dep)
+    logger.info("-----------------------------------")
+
+
 def main() -> int:
     """Точка входа в приложение."""
     try:
@@ -56,6 +69,8 @@ def main() -> int:
             config.package_name, config.max_depth
         )
         print_graph_summary(graph)
+        if config.reverse_for:
+            print_reverse_deps(graph, config.reverse_for)
 
         return 0
     except ValueError as error:

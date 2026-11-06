@@ -20,6 +20,33 @@ class Graph:
         if child not in self.adjacency:
             self.adjacency[child] = set()
 
+    def get_reverse_dependencies(self, target: str) -> set[str]:
+        """Возвращает пакеты, которые зависят от target."""
+        reverse_adj: dict[str, set[str]] = {}
+        for node in self.adjacency:
+            reverse_adj[node] = set()
+
+        for parent, children in self.adjacency.items():
+            for child in children:
+                if child not in reverse_adj:
+                    reverse_adj[child] = set()
+                reverse_adj[child].add(parent)
+
+        visited: set[str] = set()
+        queue: deque[str] = deque([target])
+        visited.add(target)
+
+        while queue:
+            current = queue.popleft()
+            parents = reverse_adj.get(current, set())
+            for parent in parents:
+                if parent not in visited:
+                    visited.add(parent)
+                    queue.append(parent)
+
+        visited.discard(target)
+        return visited
+
 
 class GraphBuilder:
     """Строит граф зависимостей алгоритмом BFS."""
